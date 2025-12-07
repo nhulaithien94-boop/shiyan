@@ -1,0 +1,73 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 19:36:31
+--********************************************************************--
+DESCRIBE pai_online_project.rec_sln_demo_user_table;
+
+show partitions pai_online_project.rec_sln_demo_user_table;
+
+CREATE TABLE IF NOT EXISTS rec_sln_demo_user_table_v1(
+  user_id BIGINT COMMENT '用户唯一ID',
+  gender STRING COMMENT '性别',
+  age BIGINT COMMENT '年龄',
+  city STRING COMMENT '城市',
+  item_cnt BIGINT COMMENT '创作内容数',
+  follow_cnt BIGINT COMMENT '关注数',
+  follower_cnt BIGINT COMMENT '粉丝数',
+  register_time BIGINT COMMENT '注册时间',
+  tags STRING COMMENT '用户标签'
+) PARTITIONED BY (ds STRING) STORED AS ALIORC;
+
+INSERT OVERWRITE TABLE rec_sln_demo_user_table_v1 PARTITION(ds)
+SELECT *
+FROM pai_online_project.rec_sln_demo_user_table
+WHERE ds >= "20251001" and ds <= "20251024";
+
+CREATE TABLE IF NOT EXISTS rec_sln_demo_item_table_v1(
+  item_id BIGINT COMMENT '内容ID',
+  duration DOUBLE COMMENT '视频时长',
+  title STRING COMMENT '标题',
+  category STRING COMMENT '一级标签',
+  author BIGINT COMMENT '作者',
+  click_count BIGINT COMMENT '累计点击数',
+  praise_count BIGINT COMMENT '累计点赞数',
+  pub_time BIGINT COMMENT '发布时间'
+) PARTITIONED BY (ds STRING) STORED AS ALIORC;
+
+INSERT OVERWRITE TABLE rec_sln_demo_item_table_v1 PARTITION(ds)
+SELECT *
+FROM pai_online_project.rec_sln_demo_item_table
+WHERE ds >= "20251001" and ds <= "20251024";
+
+CREATE TABLE IF NOT EXISTS rec_sln_demo_behavior_table_v1(
+  request_id STRING COMMENT '埋点ID/请求ID',
+  user_id STRING COMMENT '用户唯一ID',
+  exp_id STRING COMMENT '实验ID',
+  page STRING COMMENT '页面',
+  net_type STRING COMMENT '网络型号',
+  event_time BIGINT COMMENT '行为时间',
+  item_id STRING COMMENT '内容ID',
+  event STRING COMMENT '行为类型',
+  playtime DOUBLE COMMENT '播放时长/阅读时长'
+) PARTITIONED BY (ds STRING) STORED AS ALIORC;
+
+
+INSERT OVERWRITE TABLE rec_sln_demo_behavior_table_v1 PARTITION(ds)
+SELECT *
+FROM pai_online_project.rec_sln_demo_behavior_table
+WHERE ds > "20251001" and ds <= "20251024";
+
+
+ describe rec_sln_demo_behavior_table_v1 ;
+
+ show PARTITIONS  rec_sln_demo_behavior_table_v1 ;
+
+ read rec_sln_demo_behavior_table_v1 10;
+ read rec_sln_demo_user_table_v1 10;
+ read rec_sln_demo_item_table_v1 10;
+
+
+--- select DISTINCT event from rec_sln_demo_behavior_table_v1 where ds="20250926";
+
+--- select tags from rec_sln_demo_user_table_v1 where ds="20250926" limit 100;
