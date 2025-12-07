@@ -1,0 +1,116 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 20:51:51
+--********************************************************************--
+SET odps.stage.mapper.split.size=4;
+SET odps.stage.reducer.num=80;
+SET odps.service.mode=off;
+CREATE TABLE IF NOT EXISTS rec_demo_user_id_pure_7d_agg 
+(
+    user_id string
+    ,user__cnt_praise_7d bigint
+    ,user__cnt_click_7d bigint
+    ,user__cnt_expr_7d bigint
+    ,user__cnt_praise_item_id_7d bigint
+    ,user__cnt_click_item_id_7d bigint
+    ,user__cnt_expr_item_id_7d bigint
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+with
+    tmp_t AS (SELECT *,DATEDIFF(TO_DATE('${bdp.system.bizdate}','yyyymmdd'),TO_DATE(ds,'yyyymmdd'),'dd') pre_day FROM rec_demo_user_id_1d_pre_agg WHERE ds<='${bdp.system.bizdate}' AND ds>TO_CHAR(DATEADD(TO_DATE('${bdp.system.bizdate}','yyyymmdd'),-7,'dd'),'yyyymmdd'))
+
+INSERT OVERWRITE TABLE rec_demo_user_id_pure_7d_agg PARTITION(ds='${bdp.system.bizdate}')
+SELECT  tmp_t.user_id
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='praise' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_praise_7d
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='click' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_click_7d
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='expr' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_expr_7d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='praise' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_praise_item_id_7d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='click' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_click_item_id_7d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<7 AND tmp_t.event='expr' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_expr_item_id_7d
+FROM    tmp_t
+GROUP BY tmp_t.user_id
+;
+CREATE TABLE IF NOT EXISTS rec_demo_user_id_pure_1d_agg 
+(
+    user_id string
+    ,user__cnt_praise_1d bigint
+    ,user__cnt_click_1d bigint
+    ,user__cnt_expr_1d bigint
+    ,user__cnt_praise_item_id_1d bigint
+    ,user__cnt_click_item_id_1d bigint
+    ,user__cnt_expr_item_id_1d bigint
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+with
+    tmp_t AS (SELECT *,DATEDIFF(TO_DATE('${bdp.system.bizdate}','yyyymmdd'),TO_DATE(ds,'yyyymmdd'),'dd') pre_day FROM rec_demo_user_id_1d_pre_agg WHERE ds<='${bdp.system.bizdate}' AND ds>TO_CHAR(DATEADD(TO_DATE('${bdp.system.bizdate}','yyyymmdd'),-1,'dd'),'yyyymmdd'))
+
+INSERT OVERWRITE TABLE rec_demo_user_id_pure_1d_agg PARTITION(ds='${bdp.system.bizdate}')
+SELECT  tmp_t.user_id
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='praise' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_praise_1d
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='click' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_click_1d
+        ,SUM(tmp_t.cnt) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='expr' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name IS NULL) user__cnt_expr_1d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='praise' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_praise_item_id_1d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='click' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_click_item_id_1d
+        ,COUNT(DISTINCT tmp_t.cate_v) FILTER(WHERE tmp_t.pre_day<1 AND tmp_t.event='expr' AND tmp_t.agg_type='only_cnt' AND tmp_t.scene='scene_all' AND tmp_t.cate_field_name='item_id') user__cnt_expr_item_id_1d
+FROM    tmp_t
+GROUP BY tmp_t.user_id
+;
+CREATE TABLE IF NOT EXISTS rec_demo_user_id_7d_agg 
+(
+    user_id string
+    ,user__cnt_praise_7d bigint
+    ,user__cnt_click_7d bigint
+    ,user__cnt_expr_7d bigint
+    ,user__cnt_praise_item_id_7d bigint
+    ,user__cnt_click_item_id_7d bigint
+    ,user__cnt_expr_item_id_7d bigint
+    ,user__cnt_praise_1d bigint
+    ,user__cnt_click_1d bigint
+    ,user__cnt_expr_1d bigint
+    ,user__cnt_praise_item_id_1d bigint
+    ,user__cnt_click_item_id_1d bigint
+    ,user__cnt_expr_item_id_1d bigint
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+INSERT OVERWRITE TABLE rec_demo_user_id_7d_agg PARTITION(ds='${bdp.system.bizdate}')
+SELECT  sq0.user_id
+        ,sq0.user__cnt_praise_7d
+        ,sq0.user__cnt_click_7d
+        ,sq0.user__cnt_expr_7d
+        ,sq0.user__cnt_praise_item_id_7d
+        ,sq0.user__cnt_click_item_id_7d
+        ,sq0.user__cnt_expr_item_id_7d
+        ,sq1.user__cnt_praise_1d
+        ,sq1.user__cnt_click_1d
+        ,sq1.user__cnt_expr_1d
+        ,sq1.user__cnt_praise_item_id_1d
+        ,sq1.user__cnt_click_item_id_1d
+        ,sq1.user__cnt_expr_item_id_1d
+FROM    (
+            SELECT  *
+            FROM    rec_demo_user_id_pure_7d_agg
+            WHERE   ds = '${bdp.system.bizdate}'
+        ) sq0
+LEFT JOIN (
+              SELECT  *
+              FROM    rec_demo_user_id_pure_1d_agg
+              WHERE   ds = '${bdp.system.bizdate}'
+          ) sq1
+ON      sq0.user_id = sq1.user_id
+;
