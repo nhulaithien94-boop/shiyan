@@ -1,0 +1,72 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 20:53:01
+--********************************************************************--
+CREATE TABLE IF NOT EXISTS rec_demo_user_id_static_feat 
+(
+    user_id string
+    ,user__cnt_praise_1d bigint
+    ,user__cnt_click_1d bigint
+    ,user__cnt_expr_1d bigint
+    ,user__cnt_praise_7d bigint
+    ,user__cnt_click_7d bigint
+    ,user__cnt_expr_7d bigint
+    ,user__cnt_praise_item_id_1d bigint
+    ,user__cnt_click_item_id_1d bigint
+    ,user__cnt_expr_item_id_1d bigint
+    ,user__cnt_praise_item_id_7d bigint
+    ,user__cnt_click_item_id_7d bigint
+    ,user__cnt_expr_item_id_7d bigint
+    ,user__ratio_praise_click_1d double
+    ,user__ratio_click_expr_1d double
+    ,user__ratio_praise_click_7d double
+    ,user__ratio_click_expr_7d double
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+SET odps.stage.mapper.split.size=8;
+INSERT OVERWRITE TABLE rec_demo_user_id_static_feat PARTITION(ds='${bdp.system.bizdate}')
+SELECT  COALESCE(sq0.user_id) user_id
+        ,sq0.user__cnt_praise_1d
+        ,sq0.user__cnt_click_1d
+        ,sq0.user__cnt_expr_1d
+        ,sq0.user__cnt_praise_7d
+        ,sq0.user__cnt_click_7d
+        ,sq0.user__cnt_expr_7d
+        ,sq0.user__cnt_praise_item_id_1d
+        ,sq0.user__cnt_click_item_id_1d
+        ,sq0.user__cnt_expr_item_id_1d
+        ,sq0.user__cnt_praise_item_id_7d
+        ,sq0.user__cnt_click_item_id_7d
+        ,sq0.user__cnt_expr_item_id_7d
+        ,CTR_NUM(
+            sq0.user__cnt_praise_1d
+            ,sq0.user__cnt_click_1d
+            ,true
+        ) user__ratio_praise_click_1d
+        ,CTR_NUM(
+            sq0.user__cnt_click_1d
+            ,sq0.user__cnt_expr_1d
+            ,true
+        ) user__ratio_click_expr_1d
+        ,CTR_NUM(
+            sq0.user__cnt_praise_7d
+            ,sq0.user__cnt_click_7d
+            ,true
+        ) user__ratio_praise_click_7d
+        ,CTR_NUM(
+            sq0.user__cnt_click_7d
+            ,sq0.user__cnt_expr_7d
+            ,true
+        ) user__ratio_click_expr_7d
+FROM    (
+            SELECT  *
+            FROM    rec_demo_user_id_7d_agg
+            WHERE   ds = '${bdp.system.bizdate}'
+        ) sq0
+;
