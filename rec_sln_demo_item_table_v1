@@ -1,0 +1,44 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 19:36:06
+--********************************************************************--
+CREATE TABLE IF NOT EXISTS rec_demo_rec_sln_demo_item_table_v1_preprocess 
+(
+  item_id string
+  ,category string
+  ,author bigint
+  ,click_count bigint
+  ,praise_count bigint
+  ,item_pub_time bigint COMMENT 'item侧pub_time距今多天'
+  ,item_pub_time_bin string COMMENT 'item侧item_pub_time字段分段衍生'
+)
+PARTITIONED BY 
+(
+  ds string
+)
+LIFECYCLE 90
+;
+INSERT OVERWRITE TABLE rec_demo_rec_sln_demo_item_table_v1_preprocess PARTITION(ds='${bdp.system.bizdate}')
+SELECT  item_id
+        ,category
+        ,author
+        ,click_count
+        ,praise_count
+        ,item_pub_time
+        ,BOUND_INDEX(item_pub_time,ARRAY(3.0)) item_pub_time_bin
+FROM    (
+  SELECT  CAST(item_id AS STRING) item_id
+  ,category
+  ,author
+  ,click_count
+  ,praise_count
+  ,DATEDIFF(
+    TO_DATE('${bdp.system.bizdate}','yyyymmdd')
+    ,FROM_UNIXTIME(pub_time)
+    ,'dd'
+  ) item_pub_time
+  FROM    rec_sln_demo_item_table_v1
+  WHERE   ds = '${bdp.system.bizdate}'
+) sq0
+;
