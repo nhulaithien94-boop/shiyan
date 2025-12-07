@@ -1,0 +1,71 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 20:43:18
+--********************************************************************--
+CREATE TABLE IF NOT EXISTS rec_demo_rec_sln_demo_behavior_table_v1_wide 
+(
+    user_id string
+    ,event_unix_time bigint
+    ,item_id string
+    ,event string
+    ,day_h bigint COMMENT 'event_time在当天的第几小时'
+    ,week_day bigint COMMENT 'event_time在一周得第几天'
+    ,gender string
+    ,city string
+    ,item_cnt bigint
+    ,follow_cnt bigint
+    ,follower_cnt bigint
+    ,user_register_time bigint COMMENT 'user侧register_time距今多天'
+    ,user_register_time_bin string COMMENT 'user侧user_register_time字段分段衍生'
+    ,category string
+    ,author bigint
+    ,click_count bigint
+    ,praise_count bigint
+    ,item_pub_time bigint COMMENT 'item侧pub_time距今多天'
+    ,item_pub_time_bin string COMMENT 'item侧item_pub_time字段分段衍生'
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+INSERT OVERWRITE TABLE rec_demo_rec_sln_demo_behavior_table_v1_wide PARTITION(ds='${bdp.system.bizdate}')
+SELECT  sq0.user_id
+        ,sq0.event_unix_time
+        ,sq0.item_id
+        ,sq0.event
+        ,sq0.day_h
+        ,sq0.week_day
+        ,sq1.gender
+        ,sq1.city
+        ,sq1.item_cnt
+        ,sq1.follow_cnt
+        ,sq1.follower_cnt
+        ,sq1.user_register_time
+        ,sq1.user_register_time_bin
+        ,sq2.category
+        ,sq2.author
+        ,sq2.click_count
+        ,sq2.praise_count
+        ,sq2.item_pub_time
+        ,sq2.item_pub_time_bin
+FROM    (
+            SELECT  *
+            FROM    rec_demo_rec_sln_demo_behavior_table_v1_preprocess
+            WHERE   ds = '${bdp.system.bizdate}'
+        ) sq0
+LEFT JOIN (
+              SELECT  *
+              FROM    rec_demo_rec_sln_demo_user_table_v1_preprocess
+              WHERE   ds = '${bdp.system.bizdate}'
+          ) sq1
+ON      sq0.user_id = sq1.user_id LEFT
+JOIN    (
+            SELECT  *
+            FROM    rec_demo_rec_sln_demo_item_table_v1_preprocess
+            WHERE   ds = '${bdp.system.bizdate}'
+        ) sq2
+ON      sq0.item_id = sq2.item_id
+;
