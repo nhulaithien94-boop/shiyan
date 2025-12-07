@@ -1,0 +1,76 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 20:54:07
+--********************************************************************--
+CREATE TABLE IF NOT EXISTS rec_demo_rec_sln_demo_user_table_v1_all_feat 
+(
+    user_id string
+    ,gender string
+    ,city string
+    ,item_cnt bigint
+    ,follow_cnt bigint
+    ,follower_cnt bigint
+    ,user_register_time bigint COMMENT 'user侧register_time距今多天'
+    ,user_register_time_bin string COMMENT 'user侧user_register_time字段分段衍生'
+    ,user__cnt_praise_1d bigint
+    ,user__cnt_click_1d bigint
+    ,user__cnt_expr_1d bigint
+    ,user__cnt_praise_7d bigint
+    ,user__cnt_click_7d bigint
+    ,user__cnt_expr_7d bigint
+    ,user__cnt_praise_item_id_1d bigint
+    ,user__cnt_click_item_id_1d bigint
+    ,user__cnt_expr_item_id_1d bigint
+    ,user__cnt_praise_item_id_7d bigint
+    ,user__cnt_click_item_id_7d bigint
+    ,user__cnt_expr_item_id_7d bigint
+    ,user__ratio_praise_click_1d double
+    ,user__ratio_click_expr_1d double
+    ,user__ratio_praise_click_7d double
+    ,user__ratio_click_expr_7d double
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+SET odps.stage.mapper.split.size=8;
+INSERT OVERWRITE TABLE rec_demo_rec_sln_demo_user_table_v1_all_feat PARTITION(ds='${bdp.system.bizdate}')
+SELECT  sq0.user_id
+        ,sq0.gender
+        ,sq0.city
+        ,sq0.item_cnt
+        ,sq0.follow_cnt
+        ,sq0.follower_cnt
+        ,sq0.user_register_time
+        ,sq0.user_register_time_bin
+        ,sq1.user__cnt_praise_1d
+        ,sq1.user__cnt_click_1d
+        ,sq1.user__cnt_expr_1d
+        ,sq1.user__cnt_praise_7d
+        ,sq1.user__cnt_click_7d
+        ,sq1.user__cnt_expr_7d
+        ,sq1.user__cnt_praise_item_id_1d
+        ,sq1.user__cnt_click_item_id_1d
+        ,sq1.user__cnt_expr_item_id_1d
+        ,sq1.user__cnt_praise_item_id_7d
+        ,sq1.user__cnt_click_item_id_7d
+        ,sq1.user__cnt_expr_item_id_7d
+        ,sq1.user__ratio_praise_click_1d
+        ,sq1.user__ratio_click_expr_1d
+        ,sq1.user__ratio_praise_click_7d
+        ,sq1.user__ratio_click_expr_7d
+FROM    (
+            SELECT  *
+            FROM    rec_demo_rec_sln_demo_user_table_v1_preprocess
+            WHERE   ds = '${bdp.system.bizdate}'
+        ) sq0
+LEFT JOIN (
+              SELECT  *
+              FROM    rec_demo_user_id_static_feat
+              WHERE   ds = '${bdp.system.bizdate}'
+          ) sq1
+ON      sq0.user_id = sq1.user_id
+;
