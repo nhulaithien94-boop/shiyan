@@ -1,0 +1,30 @@
+--MaxCompute SQL
+--********************************************************************--
+--author: nick0591997415
+--create time: 2025-12-06 19:31:49
+--********************************************************************--
+CREATE TABLE IF NOT EXISTS rec_demo_rec_sln_demo_behavior_table_v1_preprocess 
+(
+    user_id string
+    ,event_unix_time bigint
+    ,item_id string
+    ,event string
+    ,day_h bigint COMMENT 'event_time在当天的第几小时'
+    ,week_day bigint COMMENT 'event_time在一周的第几天'
+)
+PARTITIONED BY 
+(
+    ds string
+)
+LIFECYCLE 90
+;
+INSERT OVERWRITE TABLE rec_demo_rec_sln_demo_behavior_table_v1_preprocess PARTITION(ds='${bdp.system.bizdate}')
+SELECT  user_id
+        ,event_time event_unix_time
+        ,item_id
+        ,event
+        ,DATEPART(FROM_UNIXTIME(event_time),'hh') day_h
+        ,WEEKDAY(FROM_UNIXTIME(event_time)) week_day
+FROM    rec_sln_demo_behavior_table_v1
+WHERE   ds = '${bdp.system.bizdate}'
+;
